@@ -1,94 +1,31 @@
 //-------------------------------------------------------------------------
-// LightWare LW20 API V0.1.0
-//
-// First Pass.
-// Support for Arduino, PI, Windows, Linux (8bit, 32bit, 64bit).
-// Using minimal C++.
-// Single header, no dependencies beyond c lib. Only memset?
-// No dynamic memory allocations.
-//
-// Supported LightWare Products:
-// Model: LW20 - FW: 1.0 - SW: 1.0
+// LightWare LW20 API V0.7.2
+// Written by: Robert Gowans, rob@lightware.co.za
 //-------------------------------------------------------------------------
-//
-// Communication must be decoupled.
-// We want to support any byte based communication: (TCP, UDP, Serial, I2c, etc...)
-// Callback functions for reading and writing. (At the moment just extrnally declared c functions.)
-// Allow C++ object method based callbacks?
-// Maybe virtual class that has functions for read write
-//
-// Event based. Layered usage approach.
-//
-// TODO: Need to fix the horrible way to declare and deal with new commands.
-// Don't want to waste mem/perf for tables, so probably just codespace with
-// macros to help quell the madness.
-//
-// TOOD: Append lw20 to all functions for "namespacing"?
+
+// Features & Characteristics:
+//-------------------------------------------------------------------------
+// - Support for Arduino, RaspberryPI, Windows & Linux. (8bit, 32bit, 64bit)
+// - Single header file library.
+// - Zero external dependencies.
+// - Zero dynamic memory allocations.
+// - Minimal C++ style.
+
+// How to use single file header only libraries:
+//-------------------------------------------------------------------------
+// You can include this file as normal when you would include any other 
+// header file. However, you need to define the implementation in one
+// C or C++ compilation unit file. You can do this with:
+// 
+// #define LW20_API_IMPLEMENTATION
+// #include "lw20api.h"
 //-------------------------------------------------------------------------
 
 #ifndef LIGHTWARE_INCLUDE_LW20API_H
 #define LIGHTWARE_INCLUDE_LW20API_H
 
-#define LW20_FORCE_MMI_MODE_CHAR	'`'
-#define LW20_FORCE_HMI_MODE_CHAR	'\0x1B'
+#define LW20_STREAM_CHANNEL_COUNT	5
 
-#define LW20_QUERY		"?"
-#define LW20_SET		"#"
-#define LW20_STREAM		"$"
-#define LW20_SAVE		"%"
-#define LW20_TERMINAL	"\r"
-
-#define LW20_CMD_QUERY(ID)	(LW20_QUERY ID LW20_TERMINAL)
-#define LW20_CMD_SET(ID)	(LW20_SET ID LW20_TERMINAL)
-
-#define LW20_ID_PRODUCT						"p"
-
-#define LW20_ID_LASER_MODE					"lm"
-#define LW20_ID_LASER_FIRING				"lf"
-#define LW20_ID_LASER_TEMPERATURE			"lt"
-#define LW20_ID_LASER_BACKGROUND_NOISE		"ln"
-#define LW20_ID_LASER_DISTANCE_FIRST		"ldf"
-#define LW20_ID_LASER_DISTANCE_LAST			"ldl"
-#define LW20_ID_LASER_SIGNAL_STRENGTH_FIRST	"lhf"
-#define LW20_ID_LASER_SIGNAL_STRENGTH_LAST	"lhl"
-#define LW20_ID_LASER_OFFSET				"lo"
-#define LW20_ID_LASER_ALARM_A_DISTANCE		"laa"
-#define LW20_ID_LASER_ALARM_B_DISTANCE		"lab"
-#define LW20_ID_LASER_ALARM_HYSTERESIS		"lah"
-#define LW20_ID_LASER_ENCODING_PATTERN		"le"
-#define LW20_ID_LASER_LOST_CONFIRMATIONS	"lc"
-#define LW20_ID_LASER_GAIN_BOOT				"lb"
-
-#define LW20_ID_SERVO_CONNECTED				"sc"
-#define LW20_ID_SERVO_POSITION				"sp"
-#define LW20_ID_SERVO_LAG					"sl"
-#define LW20_ID_SERVO_STEPS					"sr"
-#define LW20_ID_SERVO_DIR					"st"
-#define LW20_ID_SERVO_SCAN					"ss"
-#define LW20_ID_SERVO_PWM_MIN				"swl"
-#define LW20_ID_SERVO_PWM_MAX				"swh"
-#define LW20_ID_SERVO_PWM_SCALE				"sws"
-#define LW20_ID_SERVO_FOV_LOW				"sfl"
-#define LW20_ID_SERVO_FOV_HIGH				"sfh"
-#define LW20_ID_SERVO_ALARM_A_LOW			"sal"
-#define LW20_ID_SERVO_ALARM_A_HIGH			"sah"
-#define LW20_ID_SERVO_ALARM_B_LOW			"sbl"
-#define LW20_ID_SERVO_ALARM_B_HIGH			"sbh"
-
-#define LW20_ID_ALARM_BOTH					"a"
-#define LW20_ID_ALARM_A						"aa"
-#define LW20_ID_ALARM_B						"ab"
-
-#define LW20_ID_COMS_BAUD_RATE  			"cb"
-#define LW20_ID_COMS_I2C_ADDRESS			"ci"
-#define LW20_ID_COMS_TAGGING				"ct"
-
-#define LW20_ID_ENERGY_POWER_CONSUMPTION	"e"
-
-//-------------------------------------------------------------------------
-// Define Public Types and Function Prototypes
-
-// LW20 Commands & Responses
 enum lwCommand
 {
 	LWC_NONE,
@@ -96,14 +33,16 @@ enum lwCommand
 
 	LWC_STREAM_CLEAR,
 
+	LWC_STREAM_1,
+	LWC_STREAM_2,
+	LWC_STREAM_3,
+	LWC_STREAM_4,
+	LWC_STREAM_5,
+
 	LWC_SAVE_ALL,
 
 	LWC_PRODUCT,
 	
-	LWC_LASER_MODE,
-	LWC_LASER_FIRING,
-	LWC_LASER_TEMPERATURE,
-	LWC_LASER_BACKGROUND_NOISE,
 	LWC_LASER_DISTANCE_FIRST,
 	LWC_LASER_DISTANCE_LAST,
 	LWC_LASER_SIGNAL_STRENGTH_FIRST,
@@ -112,20 +51,24 @@ enum lwCommand
 	LWC_LASER_ALARM_A_DISTANCE,
 	LWC_LASER_ALARM_B_DISTANCE,
 	LWC_LASER_ALARM_HYSTERESIS,
+	LWC_LASER_MODE,
+	LWC_LASER_FIRING,
+	LWC_LASER_TEMPERATURE,
+	LWC_LASER_BACKGROUND_NOISE,
 	LWC_LASER_ENCODING_PATTERN,
 	LWC_LASER_LOST_CONFIRMATIONS,
 	LWC_LASER_GAIN_BOOST,
 
 	LWC_SERVO_CONNECTED,
 	LWC_SERVO_SCANNING,
-	LWC_SERVO_POSITION,
-	LWC_SERVO_LAG,
-	LWC_SERVO_STEPS,
-	LWC_SERVO_DIR,
 	LWC_SERVO_SCAN,
+	LWC_SERVO_POSITION,
 	LWC_SERVO_PWM_MIN,
 	LWC_SERVO_PWM_MAX,
 	LWC_SERVO_PWM_SCALE,
+	LWC_SERVO_TYPE,	
+	LWC_SERVO_STEPS,
+	LWC_SERVO_LAG,
 	LWC_SERVO_FOV_LOW,
 	LWC_SERVO_FOV_HIGH,
 	LWC_SERVO_ALARM_A_LOW,
@@ -139,8 +82,7 @@ enum lwCommand
 
 	LWC_COMS_BAUD_RATE,
 	LWC_COMS_I2C_ADDRESS,
-	LWC_COMS_TAGGING,
-
+	
 	LWC_ENERGY_POWER_CONSUMPTION,
 };
 
@@ -172,40 +114,43 @@ enum lwBaudRate
 
 enum lwModeSpeed
 {
-	LWMS_388	= 1,
-	LWMS_194	= 2,
-	LWMS_129	= 3,
-	LWMS_97		= 4,
-	LWMS_77		= 5,
-	LWMS_64		= 6,
-	LWMS_55		= 7,
-	LWMS_48		= 8,
+	LWMS_388		= 1,
+	LWMS_194		= 2,
+	LWMS_129		= 3,
+	LWMS_97			= 4,
+	LWMS_77			= 5,
+	LWMS_64			= 6,
+	LWMS_55			= 7,
+	LWMS_48			= 8,
 };
 
-enum lwError
+enum lwEncodingPattern
 {
-	LWE_NONE,
-	LWE_NOT_CONNECTED,
-	LWE_TIMEOUT,
-	LWE_NO_RESPONSE,
-	LWE_INVALID_VALUE,
-	LWE_OUTPUT_BUFFER_TOO_SMALL,
+	LWEP_NONE		= 0,
+	LWEP_PATTERN_A	= 1,
+	LWEP_PATTERN_B	= 2,
+	LWEP_PATTERN_C	= 3,
+	LWEP_PATTERN_D	= 4,
 };
 
-enum lwEventLoopResult
+enum lwScanType
 {
-	LWELR_GET_PACKET,
+	LWST_BIDIRECTIONAL = 0,
+	LWST_UNIDIRECTIONAL = 1,
+};
+
+enum lwEventLoopStatus
+{
 	LWELR_SLEEP,
+	LWELR_SEND_PACKET,
+	LWELR_GET_PACKET,
 	LWELR_FEEDBACK,
-	LWELR_SEND,
-	LWELR_AGAIN,
+	LWELR_COMPLETED,
 	LWELR_ERROR,
 	LWELR_TIMEOUT,
-	LWELR_COMPLETED,
-	LWELR_INITED,
 };
 
-enum lwInitState
+enum lwSensorState
 {
 	LWIS_SET_MMI,
 	LWIS_WAIT_MMI,
@@ -222,6 +167,12 @@ enum lwInitState
 	LWIS_WAITING_FOR_RESPONSE,
 };
 
+struct lwEventLoopResult
+{
+	lwEventLoopStatus	status;
+	int32_t				timeMS;
+};
+
 enum lwResolvePacketStatus
 {
 	LWRPS_AGAIN,
@@ -229,71 +180,117 @@ enum lwResolvePacketStatus
 	LWRPS_COMPLETE,
 };
 
+struct lwAlarmState
+{
+	bool 				alarmA;
+	bool 				alarmB;
+};
+
 struct lwProductInfo
 {
-	char 		model[8];
-	float 		firmwareVersion;
-	float 		softwareVersion;
-
+	char				model[8];
+	char				firmwareVersion[8];
+	int32_t				hardwareVersion;
 };
 
-struct lwLW20
+struct lwScanSample
 {
-	bool		active;
-	lwInitState	initState;
-
-	lwProductInfo product;
-
-	uint8_t		packetBuf[32];
-	int 		packetLen;
-
-	// TODO: Need this?
-	lwError		error;
-	void*		userData;
-
-	lwCommand	sendCommand;
-};
-
-struct lwParser
-{
-	uint8_t*	packetBuf;
-	int 		packetLen;
-	int 		packetIdx;
-	int 		nextChar;
-	int 		lexemeStart;
-	int 		lexemeLength;
+	float				angle;
+	float				firstPulse;
+	float				lastPulse;
 };
 
 struct lwCmdPacket
 {
-	uint8_t	buffer[32];
-	int32_t	length;
+	lwCommand			type;
+	uint8_t				buffer[32];
+	int32_t				length;
 };
 
 struct lwResponsePacket
 {
-	lwCmdPacket		data;
-	lwCommand 		type;
+	lwCmdPacket			data;
+	lwCommand 			type;
+	bool				streaming;
+	int32_t				filterType;
 	
 	union 
 	{
 		int32_t			intValue;
 		float			floatValue;
 		lwProductInfo 	product;
+		lwScanSample	scanSample;
+		lwAlarmState	alarmState;
 	};
 };
 
-struct lwEventLoopUpdate
+struct lwLW20
 {
-	lwLW20*				lw20;
-	lwCmdPacket			sendPacket;
-	lwResponsePacket*	responsePacket;
-	int32_t				timeMS;
+	lwSensorState		state;
+	lwProductInfo 		product;
+	lwCmdPacket 		command;
+	lwResponsePacket 	response;
+	lwCommand			streamCommands[LW20_STREAM_CHANNEL_COUNT];
+	void*				userData;
 };
+
+struct lwParser
+{
+	uint8_t*			packetBuf;
+	int 				packetLen;
+	int 				packetIdx;
+	int 				nextChar;
+	int 				lexemeStart;
+	int 				lexemeLength;
+};
+
+struct lwResolvePacketResult
+{
+	lwResolvePacketStatus status;
+	int32_t bytesRead;
+};
+
+typedef bool(*lw20SendPacketCallback)(lwLW20* Lw20, lwCmdPacket* Packet);
+typedef bool(*lw20GetPacketCallback)(lwLW20* Lw20, lwResponsePacket* Packet);
+typedef bool(*lw20SleepCallback)(lwLW20* Lw20, int32_t TimeMS);
+typedef bool(*lw20StreamCallback)(lwLW20* Lw20, lwResponsePacket* Packet);
+
+struct lwServiceContext
+{
+	lw20SendPacketCallback	sendPacketCallback;
+	lw20GetPacketCallback	getPacketCallback;
+	lw20SleepCallback		sleepCallback;
+	lw20StreamCallback		streamCallback;
+};
+
+int32_t lw20BaudRateToInt(lwBaudRate BaudRate);
+int32_t lw20ModeSpeedToInt(lwModeSpeed ModeSpeed);
+const char* lw20ScanTypeToStr(lwScanType ScanType);
 
 #endif
 
 #ifdef LW20_API_IMPLEMENTATION
+
+//-------------------------------------------------------------------------
+// Helper functions.
+//-------------------------------------------------------------------------
+int32_t lw20BaudRateToInt(lwBaudRate BaudRate)
+{
+	int32_t baudTable[] = { 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600 };
+	return baudTable[BaudRate];
+}
+
+int32_t lw20ModeSpeedToInt(lwModeSpeed ModeSpeed)
+{
+	int32_t speedTable[] = { 0, 388, 194, 129, 97, 77, 64, 55, 48 };
+	return speedTable[ModeSpeed];
+}
+
+const char* lw20ScanTypeToStr(lwScanType ScanType)
+{
+	const char* scanTable[] = { "Bidirectional", "Unidirectional" };
+	return scanTable[ScanType];
+}
 
 //-------------------------------------------------------------------------
 // Parsing.
@@ -388,7 +385,6 @@ bool expectIdentifier(lwParser* Parser)
 	return false;
 }
 
-// NOTE: Max includes null term.
 int32_t expectIdentifier(lwParser* Parser, char* Buffer, int32_t BufferSize)
 {
 	int32_t identSize = 0;	
@@ -399,7 +395,7 @@ int32_t expectIdentifier(lwParser* Parser, char* Buffer, int32_t BufferSize)
 		Parser->lexemeStart = Parser->packetIdx - 1;
 		Parser->lexemeLength = 1;
 		getNextChar(Parser);
-		while ((identSize < BufferSize) > 0 && (isCharIdentifier(Parser->nextChar) || isCharNumber(Parser->nextChar)))
+		while ((identSize < BufferSize) && (isCharIdentifier(Parser->nextChar) || isCharNumber(Parser->nextChar)))
 		{
 			++identSize;
 			(Buffer++)[0] = Parser->nextChar;
@@ -445,7 +441,6 @@ bool expectNumber(lwParser* Parser, float* Number)
 		{
 			getNextChar(Parser);
 
-			// TODO: Can we make this a float?
 			double mul = 1;
 			part = 0;
 
@@ -487,7 +482,7 @@ bool parseResponseInt(lwParser* Parser, const char* ResponseString, int32_t* Res
 	if (!expectNumber(Parser, &value)) return false;
 
 	if (ResponseData)
-		*ResponseData = value;
+		*ResponseData = (int32_t)value;
 
 	return true;
 }
@@ -515,29 +510,30 @@ bool parseResponse(lwResponsePacket* Packet)
 
 	getNextChar(&parser);	
 
-	char identBuf[8];
+	char identifierBuffer[8];
+	char* identBuf = identifierBuffer;
 
-	// NOTE: We include numbers in the identifier.
-	int32_t identSize = expectIdentifier(&parser, identBuf, sizeof(identBuf));
+	int32_t identSize = expectIdentifier(&parser, identifierBuffer, sizeof(identifierBuffer));
 
 	if (identSize == 0)
 		return false;
 
-	/*
-	printf("Got packet ident: (%d) [", identSize);
-
-	for (int i = 0; i < identSize; ++i)
+	// Identify streaming packets vs stream channel responses, and clear streaming channel response.
+	if (identBuf[0] == '$' && !(identBuf[1] >= '0' && identBuf[1] <= '9') && identSize != 1)
 	{
-		printf("%c", identBuf[i]);
-	}	
-
-	printf("]\n");
-	*/
+		--identSize;
+		identBuf = identifierBuffer + 1;
+		Packet->streaming = true;
+	}
+	else
+	{
+		Packet->streaming = false;
+	}
 
 	if (identSize == 1)
 	{
 		if (identBuf[0] == '$')
-		{
+		{	
 			Packet->type = LWC_STREAM_CLEAR;
 			return true;
 		}
@@ -548,9 +544,9 @@ bool parseResponse(lwResponsePacket* Packet)
 			if (!expectPacketDelimeter(&parser)) return false;
 			if (!expectIdentifier(&parser, Packet->product.model, 8)) return false;
 			if (!expectParamDelimeter(&parser)) return false;
-			if (!expectNumber(&parser, &Packet->product.softwareVersion)) return false;
+			if (!expectIdentifier(&parser, Packet->product.firmwareVersion, 8)) return false;
 			if (!expectParamDelimeter(&parser)) return false;
-			if (!expectNumber(&parser, &Packet->product.firmwareVersion)) return false;
+			if (!expectNumber(&parser, &Packet->product.hardwareVersion)) return false;
 
 			return true;
 		}
@@ -566,14 +562,35 @@ bool parseResponse(lwResponsePacket* Packet)
 			if (!expectParamDelimeter(&parser)) return false;
 			if (!expectNumber(&parser, &alarmB)) return false;
 
-			Packet->intValue = (alarmA << 1) | alarmB;
+			Packet->alarmState.alarmA = (alarmA != 0);
+			Packet->alarmState.alarmB = (alarmB != 0);
 
+			return true;	
+		}
+		else if (identBuf[0] == 'e')
+		{
+			Packet->type = LWC_ENERGY_POWER_CONSUMPTION;
+			
+			if (!expectPacketDelimeter(&parser)) return false;
+			if (!expectNumber(&parser, &Packet->intValue)) return false;
+			
 			return true;	
 		}
 	}
 	else if (identSize == 2)
 	{
-		if (identBuf[0] == 'l')
+		if (identBuf[0] == '$')
+		{
+			if (identBuf[1] == '1') Packet->type = LWC_STREAM_1;
+			else if (identBuf[1] == '2') Packet->type = LWC_STREAM_2;
+			else if (identBuf[1] == '3') Packet->type = LWC_STREAM_3;
+			else if (identBuf[1] == '4') Packet->type = LWC_STREAM_4;
+			else if (identBuf[1] == '5') Packet->type = LWC_STREAM_5;
+			else return false;
+			
+			return true;
+		}
+		else if (identBuf[0] == 'l')
 		{
 			if (identBuf[1] == 'm')
 			{
@@ -584,13 +601,101 @@ bool parseResponse(lwResponsePacket* Packet)
 
 				return true;	
 			}
+			else if (identBuf[1] == 't')
+			{
+				Packet->type = LWC_LASER_TEMPERATURE;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'o')
+			{
+				Packet->type = LWC_LASER_OFFSET;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'f')
+			{
+				Packet->type = LWC_LASER_FIRING;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'n')
+			{
+				Packet->type = LWC_LASER_BACKGROUND_NOISE;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 't')
+			{
+				Packet->type = LWC_LASER_TEMPERATURE;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'e')
+			{
+				Packet->type = LWC_LASER_ENCODING_PATTERN;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'c')
+			{
+				Packet->type = LWC_LASER_LOST_CONFIRMATIONS;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'b')
+			{
+				Packet->type = LWC_LASER_GAIN_BOOST;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+				return true;
+			}
 		}
 		else if (identBuf[0] == 's')
 		{
 			if (identBuf[1] == 's')
 			{
-				Packet->type = LWC_SERVO_SCANNING;
-				return true;
+				if (Packet->streaming)
+				{
+					Packet->type = LWC_SERVO_SCAN;
+
+					if (!expectPacketDelimeter(&parser)) return false;
+					if (!expectNumber(&parser, &Packet->scanSample.angle)) return false;
+					if (!expectParamDelimeter(&parser)) return false;
+					if (!expectNumber(&parser, &Packet->scanSample.firstPulse)) return false;
+					if (!expectParamDelimeter(&parser)) return false;
+					if (!expectNumber(&parser, &Packet->scanSample.lastPulse)) return false;
+
+					return true;
+				}
+				else
+				{
+					Packet->type = LWC_SERVO_SCANNING;
+					return true;
+				}
 			}
 			else if (identBuf[1] == 'c')
 			{
@@ -619,6 +724,66 @@ bool parseResponse(lwResponsePacket* Packet)
 
 				return true;
 			}
+			else if (identBuf[1] == 'p')
+			{
+				Packet->type = LWC_SERVO_POSITION;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 't')
+			{
+				Packet->type = LWC_SERVO_TYPE;
+
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
+		}
+		else if (identBuf[0] == 'a')
+		{
+			if (identBuf[1] == 'a')
+			{
+				Packet->type = LWC_ALARM_STATE_A;
+				
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'b')
+			{
+				Packet->type = LWC_ALARM_STATE_B;
+				
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
+		}
+		else if (identBuf[0] == 'c')
+		{
+			if (identBuf[1] == 'b')
+			{
+				Packet->type = LWC_COMS_BAUD_RATE;
+				
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
+			else if (identBuf[1] == 'i')
+			{
+				Packet->type = LWC_COMS_I2C_ADDRESS;
+				
+				if (!expectPacketDelimeter(&parser)) return false;
+				if (!expectNumber(&parser, &Packet->intValue)) return false;
+
+				return true;
+			}
 		}
 	}
 	else if (identSize == 3)
@@ -634,6 +799,43 @@ bool parseResponse(lwResponsePacket* Packet)
 					
 					if (!expectPacketDelimeter(&parser)) return false;
 					if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+					return true;
+				}
+				else if (identBuf[2] == 'h')
+				{
+					Packet->type = LWC_LASER_ALARM_HYSTERESIS;
+					
+					if (!expectPacketDelimeter(&parser)) return false;
+					if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+					return true;
+				}
+			}
+			else if (identBuf[1] == 'd')
+			{
+				if (identBuf[2] == 'f' || identBuf[2] == 'l')
+				{
+					if (identBuf[2] == 'f') Packet->type = LWC_LASER_DISTANCE_FIRST;
+					else if (identBuf[2] == 'l') Packet->type = LWC_LASER_DISTANCE_LAST;
+
+					if (!expectParamDelimeter(&parser)) return false;
+					if (!expectNumber(&parser, &Packet->filterType)) return false;
+					if (!expectPacketDelimeter(&parser)) return false;
+					if (!expectNumber(&parser, &Packet->floatValue)) return false;
+
+					return true;
+				}
+			}
+			else if (identBuf[1] == 'h')
+			{
+				if (identBuf[2] == 'f' || identBuf[2] == 'l')
+				{
+					if (identBuf[2] == 'f') Packet->type = LWC_LASER_SIGNAL_STRENGTH_FIRST;
+					else if (identBuf[2] == 'l') Packet->type = LWC_LASER_SIGNAL_STRENGTH_LAST;
+
+					if (!expectPacketDelimeter(&parser)) return false;
+					if (!expectNumber(&parser, &Packet->intValue)) return false;
 
 					return true;
 				}
@@ -697,78 +899,14 @@ bool parseResponse(lwResponsePacket* Packet)
 		}
 	}
 
-	// Check which packet we are trying to parse.
-	
-	/*
-	if (ResponseType == LWC_PRODUCT)
-	{
-		char model[8];
-		float softwareVersion = 0.0f;
-		float firmwareVersion = 0.0f;
-
-		if (!checkIdentSingle(&parser, LW20_ID_PRODUCT)) return false;
-		if (!expectPacketDelimeter(&parser)) return false;
-		if (!expectIdentifier(&parser, model, sizeof(model))) return false;
-		if (!expectParamDelimeter(&parser)) return false;
-		if (!expectNumber(&parser, &softwareVersion)) return false;
-		if (!expectParamDelimeter(&parser)) return false;
-		if (!expectNumber(&parser, &firmwareVersion)) return false;
-
-		if (ResponseData)
-		{
-			lwLW20* lw20 = (lwLW20*)ResponseData;
-			memcpy(lw20->model, model, 8);
-			lw20->firmwareVersion = firmwareVersion;
-			lw20->softwareVersion = softwareVersion;
-		}
-		
-		return true;
-	}
-	else if (ResponseType == LWC_LASER_DISTANCE_FIRST || ResponseType == LWC_LASER_DISTANCE_LAST)
-	{
-		float distance = 0;
-		float filterType = 0;
-		
-		if (ResponseType == LWC_LASER_DISTANCE_FIRST && !checkIdentSingle(&parser, LW20_ID_LASER_DISTANCE_FIRST)) return false;
-		if (ResponseType == LWC_LASER_DISTANCE_LAST && !checkIdentSingle(&parser, LW20_ID_LASER_DISTANCE_LAST)) return false;
-			
-		if (!expectParamDelimeter(&parser)) return false;
-		if (!expectNumber(&parser, &filterType)) return false;
-		if (!expectPacketDelimeter(&parser)) return false;
-		if (!expectNumber(&parser, &distance)) return false;
-
-		if (ResponseData != 0)
-			*(float*)ResponseData = distance;
-		
-		return true;
-	}
-	
-	// Laser
-	else if (ResponseType == LWC_LASER_MODE) { return parseResponseInt(&parser, LW20_ID_LASER_MODE, (int32_t*)ResponseData); }
-	else if (ResponseType == LWC_LASER_FIRING) { return parseResponseInt(&parser, LW20_ID_LASER_FIRING, (int32_t*)ResponseData); }
-	else if (ResponseType == LWC_LASER_TEMPERATURE) { return parseResponseFloat(&parser, LW20_ID_LASER_TEMPERATURE, (float*)ResponseData); }
-	else if (ResponseType == LWC_LASER_BACKGROUND_NOISE) { return parseResponseFloat(&parser, LW20_ID_LASER_BACKGROUND_NOISE, (float*)ResponseData); }
-	else if (ResponseType == LWC_LASER_SIGNAL_STRENGTH_FIRST) { return parseResponseInt(&parser, LW20_ID_LASER_SIGNAL_STRENGTH_FIRST, (int32_t*)ResponseData); }
-	else if (ResponseType == LWC_LASER_SIGNAL_STRENGTH_LAST) { return parseResponseInt(&parser, LW20_ID_LASER_SIGNAL_STRENGTH_LAST, (int32_t*)ResponseData); }
-	else if (ResponseType == LWC_LASER_OFFSET) { return parseResponseFloat(&parser, LW20_ID_LASER_OFFSET, (float*)ResponseData); }
-	
-	// Coms
-	else if (ResponseType == LWC_COMS_BAUD_RATE) { return parseResponseInt(&parser, LW20_ID_COMS_BAUD_RATE, (int32_t*)ResponseData); }
-
-	else if (ResponseType == LWC_SAVE_ALL)
-	{
-		if (!checkIdentDouble(&parser, "%p")) return false;
-
-		return true;
-	}
-	*/
-
 	return false;
 }
 
 //-------------------------------------------------------------------------
 // Packet Building.
 //-------------------------------------------------------------------------
+// NOTE: We always assume there is enough space in the buffer to write.
+
 void packetWriteChar(lwCmdPacket* Packet, char Char)
 {
 	Packet->buffer[Packet->length++] = Char;
@@ -808,12 +946,13 @@ void packetWriteDigits(lwCmdPacket* Packet, int32_t Number)
 	}
 }
 
-// Writes a floating point number with 2 decimal places.
-// We always assume there is enough space in the buffer.
 void packetWriteFloat(lwCmdPacket* Packet, float Number)
 {
 	if (Number < 0)
+	{
 		packetWriteChar(Packet, '-');
+		Number = -Number;
+	}
 
 	int32_t whole = (int32_t)Number;
 	int32_t frac = (int32_t)((Number - (float)whole) * 100.0f);
@@ -834,169 +973,538 @@ void packetWriteInt(lwCmdPacket* Packet, int32_t Number)
 void packetClear(lwCmdPacket* Packet)
 {
 	Packet->length = 0;
-}
-
-void sendSimpleCmd(lwLW20* Lw20, lwCommand ResponseType, const char* Cmd, void* Result = 0)
-{
-	lwCmdPacket packet = {};
-	packetWriteString(&packet, Cmd);
-	//packetSend(&packet);
-	//readResponse(Lw20, ResponseType, Result);
-}
-
-void sendSimpleCmdSetInt(lwLW20* Lw20, lwCommand ResponseType, const char* Cmd, int Value)
-{
-	lwCmdPacket packet = {};
-	packetWriteString(&packet, Cmd);
-	packetWriteInt(&packet, Value);
-	packetWriteString(&packet, LW20_TERMINAL);
-	//packetSend(&packet);
-	//readResponse(Lw20, ResponseType);
-}
-
-int32_t sendSimpleCmdInt(lwLW20* Lw20, lwCommand ResponseType, const char* Cmd)
-{
-	int32_t result = 0;
-	sendSimpleCmd(Lw20, ResponseType, Cmd, &result);
-	return result;
-}
-
-float sendSimpleCmdFloat(lwLW20* Lw20, lwCommand ResponseType, const char* Cmd)
-{
-	float result = 0;
-	sendSimpleCmd(Lw20, ResponseType, Cmd, &result);
-	return result;
+	Packet->type = LWC_NONE;
 }
 
 //-------------------------------------------------------------------------
-// Global.
+// Command Packet Writers.
 //-------------------------------------------------------------------------
-void lw20SaveAll(lwLW20* Lw20)
+
+void packetWrite_GetProduct(lwCmdPacket* Packet)
 {
-	sendSimpleCmd(Lw20, LWC_SAVE_ALL, "%p\r");
+	packetClear(Packet);
+	packetWriteString(Packet, "?\r");
+	Packet->type = LWC_PRODUCT;
 }
 
-//-------------------------------------------------------------------------
-// Product.
-//-------------------------------------------------------------------------
-void lw20Product(lwLW20* Lw20)
+void packetWrite_GetLaserDistanceFirst(lwCmdPacket* Packet)
 {
-	sendSimpleCmd(Lw20, LWC_PRODUCT, "?\r", Lw20);
+	packetClear(Packet);
+	packetWriteString(Packet, "?ldf\r");
+	Packet->type = LWC_LASER_DISTANCE_FIRST;
 }
 
-//-------------------------------------------------------------------------
-// Laser.
-//-------------------------------------------------------------------------
-int32_t lw20GetLaserMode(lwLW20* Lw20)
+void packetWrite_GetLaserDistanceLast(lwCmdPacket* Packet)
 {
-	return sendSimpleCmdInt(Lw20, LWC_LASER_MODE, LW20_CMD_QUERY(LW20_ID_LASER_MODE));
+	packetClear(Packet);
+	packetWriteString(Packet, "?ldl\r");
+	Packet->type = LWC_LASER_DISTANCE_LAST;
 }
 
-int32_t lw20GetLaserFiring(lwLW20* Lw20)
+void packetWrite_GetLaserDistance(lwCmdPacket* Packet, lwPulseType PulseType, lwReturnFilter Filter)
 {
-	return sendSimpleCmdInt(Lw20, LWC_LASER_FIRING, LW20_CMD_QUERY(LW20_ID_LASER_FIRING));
-}
-
-float lw20GetLaserTemperature(lwLW20* Lw20)
-{
-	return sendSimpleCmdFloat(Lw20, LWC_LASER_TEMPERATURE, LW20_CMD_QUERY(LW20_ID_LASER_TEMPERATURE));
-}
-
-float lw20GetLaserBackgroundNoise(lwLW20* Lw20)
-{
-	return sendSimpleCmdFloat(Lw20, LWC_LASER_BACKGROUND_NOISE, LW20_CMD_QUERY(LW20_ID_LASER_BACKGROUND_NOISE));
-}
-
-float lw20GetDistance(lwLW20* Lw20, lwPulseType PulseType, lwReturnFilter ReturnFilter)
-{
-	lwCmdPacket packet = {};
+	packetClear(Packet);
 
 	if (PulseType == LWPT_FIRST)
-		packetWriteString(&packet, "?ldf,");
+	{
+		packetWriteString(Packet, "?ldf,");
+		packetWriteInt(Packet, (int)Filter);
+		packetWriteChar(Packet, '\r');
+		Packet->type = LWC_LASER_DISTANCE_FIRST;
+	}
 	else if (PulseType == LWPT_LAST)
-		packetWriteString(&packet, "?ldl,");
-
-	packetWriteInt(&packet, (uint32_t)ReturnFilter);
-	packetWriteString(&packet, LW20_TERMINAL);
-	//packetSend(&packet);
-
-	float result = 0.0f;
-
-	/*
-	if (PulseType == LWPT_FIRST)
-		readResponse(Lw20, LWC_LASER_DISTANCE_FIRST, &result);
-	else
-		readResponse(Lw20, LWC_LASER_DISTANCE_LAST, &result);
-	*/
-
-	return result;
+	{
+		packetWriteString(Packet, "?ldl,");
+		packetWriteInt(Packet, (int)Filter);
+		packetWriteChar(Packet, '\r');
+		Packet->type = LWC_LASER_DISTANCE_LAST;	
+	}
 }
 
-int32_t lw20GetLaserSignalStrength(lwLW20* Lw20, lwPulseType PulseType)
+void packetWrite_GetLaserSignalStrengthFirst(lwCmdPacket* Packet)
 {
-	if (PulseType == LWPT_FIRST)
-		return sendSimpleCmdInt(Lw20, LWC_LASER_SIGNAL_STRENGTH_FIRST, LW20_CMD_QUERY(LW20_ID_LASER_SIGNAL_STRENGTH_FIRST));
-	else if (PulseType == LWPT_LAST)
-		return sendSimpleCmdInt(Lw20, LWC_LASER_SIGNAL_STRENGTH_LAST, LW20_CMD_QUERY(LW20_ID_LASER_SIGNAL_STRENGTH_LAST));
-
-	return 0;
+	packetClear(Packet);
+	packetWriteString(Packet, "?lhf\r");
+	Packet->type = LWC_LASER_SIGNAL_STRENGTH_FIRST;
 }
 
-//-------------------------------------------------------------------------
-// Servo.
-//-------------------------------------------------------------------------
-
-// These functions are more like helpers that sit on top of the raw protocol?
-void lw20StartScan(lwLW20* Lw20)
+void packetWrite_GetLaserSignalStrengthLast(lwCmdPacket* Packet)
 {
-	sendSimpleCmd(Lw20, LWC_SAVE_ALL, "#ss,1\r");
+	packetClear(Packet);
+	packetWriteString(Packet, "?lhl\r");
+	Packet->type = LWC_LASER_SIGNAL_STRENGTH_LAST;
 }
 
-void lw20StopScan(lwLW20* Lw20)
+void packetWrite_GetLaserOffset(lwCmdPacket* Packet)
 {
-	sendSimpleCmd(Lw20, LWC_SAVE_ALL, "#ss,1\r");
+	packetClear(Packet);
+	packetWriteString(Packet, "?lo\r");
+	Packet->type = LWC_LASER_OFFSET;
 }
 
-//-------------------------------------------------------------------------
-// Alarms.
-//-------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------
-// Communications.
-//-------------------------------------------------------------------------
-
-lwBaudRate lw20GetComsBaudRate(lwLW20* Lw20)
+void packetWrite_SetLaserOffset(lwCmdPacket* Packet, float Offset)
 {
-	return (lwBaudRate)sendSimpleCmdInt(Lw20, LWC_COMS_BAUD_RATE, LW20_CMD_QUERY(LW20_ID_COMS_BAUD_RATE));
+	packetClear(Packet);
+	packetWriteString(Packet, "#lo,");
+	packetWriteFloat(Packet, Offset);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_OFFSET;
 }
 
-void lw20SetComsBaudRate(lwLW20* Lw20, lwBaudRate BaudRate)
+void packetWrite_GetLaserAlarmA(lwCmdPacket* Packet)
 {
-	sendSimpleCmdSetInt(Lw20, LWC_COMS_BAUD_RATE, LW20_SET LW20_ID_COMS_BAUD_RATE ",", BaudRate);
+	packetClear(Packet);
+	packetWriteString(Packet, "?laa\r");
+	Packet->type = LWC_LASER_ALARM_A_DISTANCE;
+}
+
+void packetWrite_SetLaserAlarmA(lwCmdPacket* Packet, float Distance)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#laa,");
+	packetWriteFloat(Packet, Distance);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_ALARM_A_DISTANCE;
+}
+
+void packetWrite_GetLaserAlarmB(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?lab\r");
+	Packet->type = LWC_LASER_ALARM_B_DISTANCE;
+}
+
+void packetWrite_SetLaserAlarmB(lwCmdPacket* Packet, float Distance)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#lab,");
+	packetWriteFloat(Packet, Distance);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_ALARM_B_DISTANCE;
+}
+
+void packetWrite_GetLaserAlarmHysteresis(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?lah\r");
+	Packet->type = LWC_LASER_ALARM_HYSTERESIS;
+}
+
+void packetWrite_SetLaserAlarmHysteresis(lwCmdPacket* Packet, float Distance)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#lah,");
+	packetWriteFloat(Packet, Distance);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_ALARM_HYSTERESIS;
+}
+
+void packetWrite_GetLaserMode(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?lm\r");
+	Packet->type = LWC_LASER_MODE;
+}
+
+void packetWrite_SetLaserMode(lwCmdPacket* Packet, lwModeSpeed ModeSpeed)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#lm,");
+	packetWriteInt(Packet, (int)ModeSpeed);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_MODE;
+}
+
+void packetWrite_GetLaserFiring(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?lf\r");
+	Packet->type = LWC_LASER_FIRING;
+}
+
+void packetWrite_SetLaserFiring(lwCmdPacket* Packet, bool Firing)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#lf,");
+	packetWriteInt(Packet, Firing ? 1 : 0);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_FIRING;
+}
+
+void packetWrite_GetLaserNoise(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?ln\r");
+	Packet->type = LWC_LASER_BACKGROUND_NOISE;
+}
+
+void packetWrite_GetLaserTemperature(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?lt\r");
+	Packet->type = LWC_LASER_TEMPERATURE;
+}
+
+void packetWrite_GetLaserEncoding(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?le\r");
+	Packet->type = LWC_LASER_ENCODING_PATTERN;
+}
+
+void packetWrite_SetLaserEncoding(lwCmdPacket* Packet, lwEncodingPattern Encoding)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#le,");
+	packetWriteInt(Packet, (int)Encoding);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_ENCODING_PATTERN;
+}
+
+void packetWrite_GetLaserLostConfirmations(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?lc\r");
+	Packet->type = LWC_LASER_LOST_CONFIRMATIONS;
+}
+
+void packetWrite_SetLaserLostConfirmations(lwCmdPacket* Packet, int Confirmations)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#lc,");
+	packetWriteInt(Packet, Confirmations);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_LOST_CONFIRMATIONS;
+}
+
+void packetWrite_GetLaserGain(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?lb\r");
+	Packet->type = LWC_LASER_GAIN_BOOST;
+}
+
+void packetWrite_SetLaserGain(lwCmdPacket* Packet, float Gain)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#lb,");
+	packetWriteFloat(Packet, Gain);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_LASER_GAIN_BOOST;
+}
+
+void packetWrite_GetServoConnected(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sc\r");
+	Packet->type = LWC_SERVO_CONNECTED;
+}
+
+void packetWrite_SetServoConnected(lwCmdPacket* Packet, bool Connected)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sc,");
+	packetWriteInt(Packet, Connected ? 1 : 0);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_CONNECTED;
+}
+
+void packetWrite_GetServoScanning(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?ss\r");
+	Packet->type = LWC_SERVO_SCANNING;
+}
+
+void packetWrite_SetServoScanning(lwCmdPacket* Packet, bool Scanning)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#ss,");
+	packetWriteInt(Packet, Scanning ? 1 : 0);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_SCANNING;
+}
+
+void packetWrite_GetServoPosition(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sp\r");
+	Packet->type = LWC_SERVO_POSITION;
+}
+
+void packetWrite_SetServoPosition(lwCmdPacket* Packet, float Position)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sp,");
+	packetWriteFloat(Packet, Position);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_POSITION;
+}
+
+void packetWrite_GetServoPwmMin(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?swl\r");
+	Packet->type = LWC_SERVO_PWM_MIN;
+}
+
+void packetWrite_SetServoPwmMin(lwCmdPacket* Packet, float Time)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#swl,");
+	packetWriteFloat(Packet, Time);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_PWM_MIN;
+}
+
+void packetWrite_GetServoPwmMax(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?swh\r");
+	Packet->type = LWC_SERVO_PWM_MAX;
+}
+
+void packetWrite_SetServoPwmMax(lwCmdPacket* Packet, float Time)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#swh,");
+	packetWriteFloat(Packet, Time);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_PWM_MAX;
+}
+
+void packetWrite_GetServoPwmScale(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sws\r");
+	Packet->type = LWC_SERVO_PWM_SCALE;
+}
+
+void packetWrite_SetServoPwmScale(lwCmdPacket* Packet, float Scale)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sws,");
+	packetWriteFloat(Packet, Scale);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_PWM_SCALE;
+}
+
+void packetWrite_GetServoScanType(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?st\r");
+	Packet->type = LWC_SERVO_TYPE;
+}
+
+void packetWrite_SetServoScanType(lwCmdPacket* Packet, lwScanType Type)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#st,");
+	packetWriteInt(Packet, (int)Type);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_TYPE;
+}
+
+void packetWrite_GetServoSteps(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sr\r");
+	Packet->type = LWC_SERVO_STEPS;
+}
+
+void packetWrite_SetServoSteps(lwCmdPacket* Packet, int StepsPerReading)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sr,");
+	packetWriteInt(Packet, StepsPerReading);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_STEPS;
+}
+
+void packetWrite_GetServoLag(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sl\r");
+	Packet->type = LWC_SERVO_LAG;
+}
+
+void packetWrite_SetServoLag(lwCmdPacket* Packet, float Angle)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sl,");
+	packetWriteFloat(Packet, Angle);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_LAG;
+}
+
+void packetWrite_GetServoFovLow(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sfl\r");
+	Packet->type = LWC_SERVO_FOV_LOW;
+}
+
+void packetWrite_SetServoFovLow(lwCmdPacket* Packet, float Angle)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sfl,");
+	packetWriteFloat(Packet, Angle);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_FOV_LOW;
+}
+
+void packetWrite_GetServoFovHigh(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sfh\r");
+	Packet->type = LWC_SERVO_FOV_HIGH;
+}
+
+void packetWrite_SetServoFovHigh(lwCmdPacket* Packet, float Angle)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sfh,");
+	packetWriteFloat(Packet, Angle);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_FOV_HIGH;
+}
+
+void packetWrite_GetServoAlarmALow(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sal\r");
+	Packet->type = LWC_SERVO_ALARM_A_LOW;
+}
+
+void packetWrite_SetServoAlarmALow(lwCmdPacket* Packet, float Angle)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sal,");
+	packetWriteFloat(Packet, Angle);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_ALARM_A_LOW;
+}
+
+void packetWrite_GetServoAlarmAHigh(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sah\r");
+	Packet->type = LWC_SERVO_ALARM_A_HIGH;
+}
+
+void packetWrite_SetServoAlarmAHigh(lwCmdPacket* Packet, float Angle)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sah,");
+	packetWriteFloat(Packet, Angle);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_ALARM_A_HIGH;
+}
+
+void packetWrite_GetServoAlarmBLow(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sbl\r");
+	Packet->type = LWC_SERVO_ALARM_B_LOW;
+}
+
+void packetWrite_SetServoAlarmBLow(lwCmdPacket* Packet, float Angle)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sbl,");
+	packetWriteFloat(Packet, Angle);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_ALARM_B_LOW;
+}
+
+void packetWrite_GetServoAlarmBHigh(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?sbh\r");
+	Packet->type = LWC_SERVO_ALARM_B_HIGH;
+}
+
+void packetWrite_SetServoAlarmBHigh(lwCmdPacket* Packet, float Angle)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#sbh,");
+	packetWriteFloat(Packet, Angle);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_SERVO_ALARM_B_HIGH;
+}
+
+void packetWrite_GetAlarmStateBoth(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?a\r");
+	Packet->type = LWC_ALARM_STATE_BOTH;
+}
+
+void packetWrite_GetAlarmStateA(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?aa\r");
+	Packet->type = LWC_ALARM_STATE_A;
+}
+
+void packetWrite_GetAlarmStateB(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?ab\r");
+	Packet->type = LWC_ALARM_STATE_B;
+}
+
+void packetWrite_GetComsBaudRate(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?cb\r");
+	Packet->type = LWC_COMS_BAUD_RATE;
+}
+
+void packetWrite_SetComsBaudRate(lwCmdPacket* Packet, lwBaudRate BaudRate)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#cb,");
+	packetWriteInt(Packet, (int)BaudRate);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_COMS_BAUD_RATE;
+}
+
+void packetWrite_GetComsAddress(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?ci\r");
+	Packet->type = LWC_COMS_I2C_ADDRESS;
+}
+
+void packetWrite_SetComsAddress(lwCmdPacket* Packet, int Address)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#ci,");
+	packetWriteInt(Packet, Address);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_COMS_I2C_ADDRESS;
+}
+
+void packetWrite_GetEnergyPower(lwCmdPacket* Packet)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "?e\r");
+	Packet->type = LWC_ENERGY_POWER_CONSUMPTION;
+}
+
+void packetWrite_SetEnergyPower(lwCmdPacket* Packet, bool Power)
+{
+	packetClear(Packet);
+	packetWriteString(Packet, "#e,");
+	packetWriteInt(Packet, Power ? 1 : 0);
+	packetWriteChar(Packet, '\r');
+	Packet->type = LWC_ENERGY_POWER_CONSUMPTION;
 }
 
 //-------------------------------------------------------------------------
-// Energy.
+// Primary Functionality.
 //-------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------
-// Main public facing functions.
-//-------------------------------------------------------------------------
-int32_t lw20BaudRateToInt(lwBaudRate BaudRate)
-{
-	int32_t baudTable[] = { 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600 };
-	return baudTable[BaudRate];
-}
-
-bool lw20CheckError(lwLW20* Lw20)
-{
-	return false;
-}
-
-bool lw20ClearError(lwLW20* Lw20)
-{
-	return false;
-}
 
 lwLW20 lw20CreateLW20()
 {
@@ -1004,186 +1512,15 @@ lwLW20 lw20CreateLW20()
 	return lw20;
 }
 
-struct lwPumpPacketResult
-{
-	bool gotPacket;
-	int32_t bytesRead;
-};
-
-lwPumpPacketResult pumpRecvPacket(lwLW20* Lw20, uint8_t* Buffer, int32_t BufferSize)
-{
-	// TODO: Report streaming packets too?
-	lwPumpPacketResult result = {};
-
-	//printf("Parse\n");
-	
-	for (int i = 0; i < BufferSize; ++i)
-	{
-		result.bytesRead++;
-
-		uint8_t c = Buffer[i];
-		if (c == '\n')
-		{
-			Lw20->packetLen = 0;
-		}
-		else if (c == '\r')
-		{
-			if (Lw20->packetLen > 0)
-			{
-				// Got packet.
-				//bool result = parseResponse(Lw20, ResponseType, ResponseData);
-				//printf("Got Packet %d\n", Lw20->packetLen);
-				// TODO: Set number of bytes read from buffer so client can advance buffer ptr.				
-				result.gotPacket = true;
-				return result;
-			}
-		}
-		else
-		{
-			if (Lw20->packetLen >= 32)
-			{
-				//printf("Packet overflow\n");
-				Lw20->packetLen = 0;
-			}
-			else
-			{
-				Lw20->packetBuf[Lw20->packetLen++] = c;
-			}
-		}
-	}
-
-	return result;
-}
-
-lwEventLoopResult lw20PumpEventLoop(lwEventLoopUpdate* Update)
-{
-	lwLW20* lw20 = Update->lw20;
-	lwCmdPacket* packet = &Update->sendPacket;
-	
-	if (lw20->initState >= LWIS_INITED)
-	{
-		if (lw20->initState == LWIS_INITED)
-		{
-			if (lw20->sendCommand == LWC_NONE)
-			{
-				return LWELR_COMPLETED;
-			}
-			else
-			{
-				lw20->initState = LWIS_SENDING_COMMAND;
-				//packetClear(packet);
-				//packetWriteString(packet, (const char*)lw20->packetBuf);
-				memcpy(packet, (lwCmdPacket*)&lw20->packetBuf, sizeof(lwCmdPacket));
-				return LWELR_SEND;
-			}
-		}
-		else if (lw20->initState == LWIS_SENDING_COMMAND)
-		{
-			lw20->initState = LWIS_WAITING_FOR_RESPONSE;
-			return LWELR_GET_PACKET;
-		}
-		else if (lw20->initState == LWIS_WAITING_FOR_RESPONSE)
-		{
-			if (Update->responsePacket->type == lw20->sendCommand)
-			{
-				lw20->initState = LWIS_INITED;
-				
-				if (lw20->sendCommand != LWC_NO_RESPONSE)
-				{
-					lw20->sendCommand = LWC_NONE;
-					return LWELR_FEEDBACK;
-				}
-				
-				lw20->sendCommand = LWC_NONE;
-				return LWELR_COMPLETED;
-			}
-
-			return LWELR_GET_PACKET;
-		}
-
-		return LWELR_COMPLETED;
-	}
-	else
-	{
-		if (lw20->initState == LWIS_SET_MMI)
-		{
-			lw20->initState = LWIS_WAIT_MMI;
-			packetClear(packet);
-			packetWriteChar(packet, LW20_FORCE_MMI_MODE_CHAR);
-			return LWELR_SEND;
-		}
-		else if (lw20->initState == LWIS_WAIT_MMI)
-		{
-			lw20->initState = LWIS_STOP_STREAMING;
-			Update->timeMS = 100;
-			return LWELR_SLEEP;
-		}
-		else if (lw20->initState == LWIS_STOP_STREAMING)
-		{
-			lw20->initState = LWIS_WAIT_STOP_STREAMING;
-			packetClear(packet);
-			packetWriteString(packet, "$\r");
-			return LWELR_SEND;
-		}
-		else if (lw20->initState == LWIS_WAIT_STOP_STREAMING)
-		{
-			lw20->initState = LWIS_STOP_SCANNING;
-			Update->timeMS = 100;
-			return LWELR_SLEEP;
-		}
-		else if (lw20->initState == LWIS_STOP_SCANNING)
-		{
-			lw20->initState = LWIS_WAIT_STOP_SCANNING;
-			packetClear(packet);
-			packetWriteString(packet, "#SS,0\r");
-			return LWELR_SEND;
-		}
-		else if (lw20->initState == LWIS_WAIT_STOP_SCANNING)
-		{
-			lw20->initState = LWIS_GET_PRODUCT;
-			return LWELR_AGAIN;
-		}
-		else if (lw20->initState == LWIS_GET_PRODUCT)
-		{
-			lw20->initState = LWIS_SENT_GET_PRODUCT;
-			packetClear(packet);
-			packetWriteString(packet, "?\r");
-			return LWELR_SEND;
-		}
-		else if (lw20->initState == LWIS_SENT_GET_PRODUCT)		
-		{
-			lw20->initState = LWIS_WAIT_GET_PRODUCT;
-			return LWELR_GET_PACKET;
-		}
-		else if (lw20->initState == LWIS_WAIT_GET_PRODUCT)
-		{
-			if (Update->responsePacket->type == LWC_PRODUCT)
-			{
-				// TODO: Add back in.
-				//memcpy(&lw20->product, &Update->responsePacket->product, sizeof(lwProductInfo));
-				lw20->initState = LWIS_INITED;
-				lw20->sendCommand = LWC_NONE;
-				return LWELR_INITED;
-			}
-
-			// TODO: Keep asking for a packet until timeout expires, then retry for X times, then error out.
-			
-			return LWELR_GET_PACKET;
-		}
-	}	
-
-	return LWELR_AGAIN;
-}
-
-struct lwResolvePacketResult
-{
-	lwResolvePacketStatus status;
-	int32_t bytesRead;
-};
-
 lwResolvePacketResult lw20ResolvePacket(lwResponsePacket* Packet, uint8_t* Buffer, int32_t BufferSize)
 {
 	lwResolvePacketResult result = {};
+
+	if (Packet->type != LWC_NONE)
+	{
+		Packet->type = LWC_NONE;
+		Packet->data.length = 0;
+	}
 
 	for (int i = 0; i < BufferSize; ++i)
 	{
@@ -1200,11 +1537,11 @@ lwResolvePacketResult lw20ResolvePacket(lwResponsePacket* Packet, uint8_t* Buffe
 			{
 				if (parseResponse(Packet))
 				{
+					Packet->data.length = 0;
 					result.status = LWRPS_COMPLETE;
 				}
 				else
 				{
-					//printf("Packet Resolve: Bad packet parse\n");
 					Packet->data.length = 0;
 					result.status = LWRPS_AGAIN;
 				}
@@ -1216,7 +1553,6 @@ lwResolvePacketResult lw20ResolvePacket(lwResponsePacket* Packet, uint8_t* Buffe
 		{
 			if (Packet->data.length >= 32)
 			{
-				//printf("Packet Resolve: Overflow\n");
 				Packet->data.length = 0;
 				result.status = LWRPS_AGAIN;
 				break;
@@ -1229,6 +1565,623 @@ lwResolvePacketResult lw20ResolvePacket(lwResponsePacket* Packet, uint8_t* Buffe
 	}
 
 	return result;
+}
+
+lwEventLoopResult lw20PumpEventLoop(lwLW20* Lw20)
+{
+	lwEventLoopResult result = {};
+	result.status = LWELR_COMPLETED;
+	lwCmdPacket* packet = &Lw20->command;
+	
+	if (Lw20->state >= LWIS_INITED)
+	{
+		if (Lw20->state == LWIS_INITED)
+		{
+			if (Lw20->command.type != LWC_NONE)
+			{
+				Lw20->state = LWIS_SENDING_COMMAND;
+				result.status = LWELR_SEND_PACKET;
+			}
+			else
+			{
+				if (Lw20->response.streaming)
+				{
+					Lw20->response.streaming = false;
+					result.status = LWELR_FEEDBACK;
+				}
+				else
+				{
+					result.status = LWELR_COMPLETED;
+				}
+			}
+		}
+		else if (Lw20->state == LWIS_SENDING_COMMAND)
+		{
+			Lw20->state = LWIS_WAITING_FOR_RESPONSE;
+			result.status = LWELR_GET_PACKET;
+		}
+		else if (Lw20->state == LWIS_WAITING_FOR_RESPONSE)
+		{
+			if (Lw20->response.type == Lw20->command.type)
+			{
+				Lw20->state = LWIS_INITED;
+				Lw20->command.type = LWC_NONE;
+				result.status = LWELR_COMPLETED;
+			}
+			else
+			{
+				result.status = LWELR_GET_PACKET;
+			}
+		}
+	}
+	else
+	{
+		if (Lw20->state == LWIS_SET_MMI)
+		{
+			Lw20->state = LWIS_WAIT_MMI;
+			packetClear(packet);
+			packetWriteChar(packet, '`');
+			result.status = LWELR_SEND_PACKET;
+		}
+		else if (Lw20->state == LWIS_WAIT_MMI)
+		{
+			Lw20->state = LWIS_STOP_STREAMING;
+			result.timeMS = 100;
+			result.status = LWELR_SLEEP;
+		}
+		else if (Lw20->state == LWIS_STOP_STREAMING)
+		{
+			Lw20->state = LWIS_WAIT_STOP_STREAMING;
+			packetClear(packet);
+			packetWriteString(packet, "$\r");
+			result.status = LWELR_SEND_PACKET;
+		}
+		else if (Lw20->state == LWIS_WAIT_STOP_STREAMING)
+		{
+			Lw20->state = LWIS_STOP_SCANNING;
+			result.timeMS = 100;
+			result.status = LWELR_SLEEP;
+		}
+		else if (Lw20->state == LWIS_STOP_SCANNING)
+		{
+			Lw20->state = LWIS_WAIT_STOP_SCANNING;
+			packetClear(packet);
+			packetWriteString(packet, "#SS,0\r");
+			result.status = LWELR_SEND_PACKET;
+		}
+		else if (Lw20->state == LWIS_WAIT_STOP_SCANNING)
+		{
+			Lw20->state = LWIS_GET_PRODUCT;
+			result.timeMS = 100;
+			result.status = LWELR_SLEEP;
+		}
+		else if (Lw20->state == LWIS_GET_PRODUCT)
+		{
+			Lw20->state = LWIS_SENT_GET_PRODUCT;
+			packetClear(packet);
+			packetWriteString(packet, "?\r");
+			result.status = LWELR_SEND_PACKET;
+		}
+		else if (Lw20->state == LWIS_SENT_GET_PRODUCT)		
+		{
+			Lw20->state = LWIS_WAIT_GET_PRODUCT;
+			result.status = LWELR_GET_PACKET;
+		}
+		else if (Lw20->state == LWIS_WAIT_GET_PRODUCT)
+		{
+			if (Lw20->response.type == LWC_PRODUCT)
+			{
+				Lw20->product = Lw20->response.product;
+				Lw20->state = LWIS_INITED;
+				Lw20->command.type = LWC_NONE;
+				Lw20->response.type = LWC_NONE;
+				result.status = LWELR_COMPLETED;
+			}
+			else
+			{
+				result.status = LWELR_GET_PACKET;
+			}
+		}
+	}	
+
+	return result;
+}
+
+bool runEventLoop(lwLW20* Lw20, lwServiceContext* Service, bool Streaming = false)
+{
+	while (true)
+	{
+		lwEventLoopResult result = lw20PumpEventLoop(Lw20);
+		
+		switch (result.status)
+		{
+			case LWELR_SLEEP:
+			{
+				Service->sleepCallback(Lw20, result.timeMS);
+			} break;
+
+			case LWELR_SEND_PACKET:
+			{
+				if (!Service->sendPacketCallback(Lw20, &Lw20->command))
+					return false;
+			} break;
+
+			case LWELR_GET_PACKET:
+			{
+				if (!Service->getPacketCallback(Lw20, &Lw20->response))
+					return false;
+			} break;
+
+			case LWELR_ERROR:
+			case LWELR_TIMEOUT:
+			{
+				return false;
+			} break;
+
+			case LWELR_FEEDBACK:
+			{
+				if (Streaming)
+				{
+					Service->streamCallback(Lw20, &Lw20->response);
+					Service->getPacketCallback(Lw20, &Lw20->response);
+				}
+				else
+				{
+					return true;
+				}
+
+			} break;
+
+			case LWELR_COMPLETED:
+			{	
+				if (Streaming)
+				{
+					Service->getPacketCallback(Lw20, &Lw20->response);
+				}
+				else
+				{
+					return true;
+				}
+
+			} break;
+		};
+	}
+}
+
+void executeCommand(lwLW20* Lw20, lwServiceContext* Service, const char* Command, lwCommand ResponseType)
+{
+	packetClear(&Lw20->command);
+	packetWriteString(&Lw20->command, Command);
+	Lw20->command.type = ResponseType;
+	runEventLoop(Lw20, Service);
+}
+
+lwProductInfo executeCmd_GetProduct(lwLW20* Lw20, lwServiceContext* Service)
+{
+	packetWrite_GetProduct(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.product;
+}
+
+float executeCmd_GetLaserDistanceFirst(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserDistanceFirst(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+float executeCmd_GetLaserDistanceLast(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserDistanceLast(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+float executeCmd_GetLaserDistance(lwLW20* Lw20, lwServiceContext* Service, lwPulseType PulseType, lwReturnFilter Filter)
+{	
+	packetWrite_GetLaserDistance(&Lw20->command, PulseType, Filter);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+int executeCmd_GetLaserSignalStrengthFirst(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserSignalStrengthFirst(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.intValue;
+}
+
+int executeCmd_GetLaserSignalStrengthLast(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserSignalStrengthLast(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.intValue;
+}
+
+float executeCmd_GetLaserOffset(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserOffset(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetLaserOffset(lwLW20* Lw20, lwServiceContext* Service, float Offset)
+{	
+	packetWrite_SetLaserOffset(&Lw20->command, Offset);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetLaserAlarmA(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserAlarmA(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetLaserAlarmA(lwLW20* Lw20, lwServiceContext* Service, float Distance)
+{	
+	packetWrite_SetLaserAlarmA(&Lw20->command, Distance);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetLaserAlarmB(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserAlarmB(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetLaserAlarmB(lwLW20* Lw20, lwServiceContext* Service, float Distance)
+{	
+	packetWrite_SetLaserAlarmB(&Lw20->command, Distance);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetLaserAlarmHysteresis(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserAlarmHysteresis(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetLaserAlarmHysteresis(lwLW20* Lw20, lwServiceContext* Service, float Distance)
+{	
+	packetWrite_SetLaserAlarmHysteresis(&Lw20->command, Distance);
+	runEventLoop(Lw20, Service);
+}
+
+lwModeSpeed executeCmd_GetLaserMode(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserMode(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (lwModeSpeed)Lw20->response.intValue;
+}
+
+void executeCmd_SetLaserMode(lwLW20* Lw20, lwServiceContext* Service, lwModeSpeed Mode)
+{	
+	packetWrite_SetLaserMode(&Lw20->command, Mode);
+	runEventLoop(Lw20, Service);
+}
+
+bool executeCmd_GetLaserFiring(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserFiring(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (Lw20->response.intValue == 1);
+}
+
+void executeCmd_SetLaserFiring(lwLW20* Lw20, lwServiceContext* Service, bool Firing)
+{	
+	packetWrite_SetLaserFiring(&Lw20->command, Firing);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetLaserNoise(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserNoise(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+float executeCmd_GetLaserTemperature(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserTemperature(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+lwEncodingPattern executeCmd_GetLaserEncoding(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserEncoding(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (lwEncodingPattern)Lw20->response.intValue;
+}
+
+void executeCmd_SetLaserEncoding(lwLW20* Lw20, lwServiceContext* Service, lwEncodingPattern Encoding)
+{	
+	packetWrite_SetLaserEncoding(&Lw20->command, Encoding);
+	runEventLoop(Lw20, Service);
+}
+
+int executeCmd_GetLaserLostConfirmations(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserLostConfirmations(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.intValue;
+}
+
+void executeCmd_SetLaserLostConfirmations(lwLW20* Lw20, lwServiceContext* Service, int Confirmations)
+{	
+	packetWrite_SetLaserLostConfirmations(&Lw20->command, Confirmations);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetLaserGain(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetLaserGain(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetLaserGain(lwLW20* Lw20, lwServiceContext* Service, float Gain)
+{	
+	packetWrite_SetLaserGain(&Lw20->command, Gain);
+	runEventLoop(Lw20, Service);
+}
+
+bool executeCmd_GetServoConnected(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoConnected(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (Lw20->response.intValue == 1);
+}
+
+void executeCmd_SetServoConnected(lwLW20* Lw20, lwServiceContext* Service, bool Connected)
+{	
+	packetWrite_SetServoConnected(&Lw20->command, Connected);
+	runEventLoop(Lw20, Service);
+}
+
+bool executeCmd_GetServoScanning(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoScanning(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (Lw20->response.intValue == 1);
+}
+
+void executeCmd_SetServoScanning(lwLW20* Lw20, lwServiceContext* Service, bool Scanning)
+{	
+	packetWrite_SetServoScanning(&Lw20->command, Scanning);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoPosition(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoPosition(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoPosition(lwLW20* Lw20, lwServiceContext* Service, float Position)
+{	
+	packetWrite_SetServoPosition(&Lw20->command, Position);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoPwmMin(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoPwmMin(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoPwmMin(lwLW20* Lw20, lwServiceContext* Service, float Time)
+{	
+	packetWrite_SetServoPwmMin(&Lw20->command, Time);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoPwmMax(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoPwmMax(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoPwmMax(lwLW20* Lw20, lwServiceContext* Service, float Time)
+{	
+	packetWrite_SetServoPwmMax(&Lw20->command, Time);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoPwmScale(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoPwmScale(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoPwmScale(lwLW20* Lw20, lwServiceContext* Service, float Scale)
+{	
+	packetWrite_SetServoPwmScale(&Lw20->command, Scale);
+	runEventLoop(Lw20, Service);
+}
+
+lwScanType executeCmd_GetServoScanType(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoScanType(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (lwScanType)Lw20->response.intValue;
+}
+
+void executeCmd_SetServoScanType(lwLW20* Lw20, lwServiceContext* Service, lwScanType Type)
+{	
+	packetWrite_SetServoScanType(&Lw20->command, Type);
+	runEventLoop(Lw20, Service);
+}
+
+int executeCmd_GetServoSteps(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoSteps(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.intValue;
+}
+
+void executeCmd_SetServoSteps(lwLW20* Lw20, lwServiceContext* Service, int StepsPerReading)
+{	
+	packetWrite_SetServoSteps(&Lw20->command, StepsPerReading);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoLag(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoLag(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoLag(lwLW20* Lw20, lwServiceContext* Service, float Angle)
+{	
+	packetWrite_SetServoLag(&Lw20->command, Angle);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoFovLow(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoFovLow(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoFovLow(lwLW20* Lw20, lwServiceContext* Service, float Angle)
+{	
+	packetWrite_SetServoFovLow(&Lw20->command, Angle);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoFovHigh(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoFovHigh(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoFovHigh(lwLW20* Lw20, lwServiceContext* Service, float Angle)
+{	
+	packetWrite_SetServoFovHigh(&Lw20->command, Angle);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoAlarmALow(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoAlarmALow(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoAlarmALow(lwLW20* Lw20, lwServiceContext* Service, float Angle)
+{	
+	packetWrite_SetServoAlarmALow(&Lw20->command, Angle);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoAlarmAHigh(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoAlarmAHigh(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoAlarmAHigh(lwLW20* Lw20, lwServiceContext* Service, float Angle)
+{	
+	packetWrite_SetServoAlarmAHigh(&Lw20->command, Angle);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoAlarmBLow(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoAlarmBLow(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoAlarmBLow(lwLW20* Lw20, lwServiceContext* Service, float Angle)
+{	
+	packetWrite_SetServoAlarmBLow(&Lw20->command, Angle);
+	runEventLoop(Lw20, Service);
+}
+
+float executeCmd_GetServoAlarmBHigh(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetServoAlarmBHigh(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.floatValue;
+}
+
+void executeCmd_SetServoAlarmBHigh(lwLW20* Lw20, lwServiceContext* Service, float Angle)
+{	
+	packetWrite_SetServoAlarmBHigh(&Lw20->command, Angle);
+	runEventLoop(Lw20, Service);
+}
+
+lwAlarmState executeCmd_GetAlarmStateBoth(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetAlarmStateBoth(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.alarmState;
+}
+
+bool executeCmd_GetAlarmStateA(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetAlarmStateA(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (Lw20->response.intValue != 0);
+}
+
+bool executeCmd_GetAlarmStateB(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetAlarmStateB(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (Lw20->response.intValue != 0);
+}
+
+lwBaudRate executeCmd_GetComsBaudRate(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetComsBaudRate(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (lwBaudRate)Lw20->response.intValue;
+}
+
+void executeCmd_SetComsBaudRate(lwLW20* Lw20, lwServiceContext* Service, lwBaudRate BaudRate)
+{	
+	packetWrite_SetComsBaudRate(&Lw20->command, BaudRate);
+	runEventLoop(Lw20, Service);
+}
+
+int executeCmd_GetComsAddress(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetComsAddress(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return Lw20->response.intValue;
+}
+
+void executeCmd_SetComsAddress(lwLW20* Lw20, lwServiceContext* Service, int Address)
+{	
+	packetWrite_SetComsAddress(&Lw20->command, Address);
+	runEventLoop(Lw20, Service);
+}
+
+bool executeCmd_GetEneryPower(lwLW20* Lw20, lwServiceContext* Service)
+{	
+	packetWrite_GetEnergyPower(&Lw20->command);
+	runEventLoop(Lw20, Service);
+	return (Lw20->response.intValue != 0);
+}
+
+void executeCmd_SetEnergyPower(lwLW20* Lw20, lwServiceContext* Service, bool Power)
+{	
+	packetWrite_SetEnergyPower(&Lw20->command, Power);
+	runEventLoop(Lw20, Service);
 }
 
 #endif
