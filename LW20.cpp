@@ -68,14 +68,14 @@ char* LW20::getProductName()
 	return lw20.product.model;
 }
 
-float LW20::getFirmwareVersion()
+char* LW20::getFirmwareVersion()
 {
 	return lw20.product.firmwareVersion;
 }
 
-float LW20::getSoftwareVersion()
+char* LW20::getSoftwareVersion()
 {
-	return lw20.product.softwareVersion;
+	return lw20.product.firmwareVersion;
 }
 
 void LW20::setLaserParams(lwModeSpeed ModeSpeed)
@@ -444,7 +444,7 @@ bool LW20::getEnergyPower()
 	return executeCmd_GetEneryPower(&lw20, &serviceContext);
 }
 
-int LW20::setEnergyPower(bool Power)
+void LW20::setEnergyPower(bool Power)
 {
 	executeCmd_SetEnergyPower(&lw20, &serviceContext, Power);
 }

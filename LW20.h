@@ -19,8 +19,8 @@ public:
 
 	// Product Information
 	char* getProductName();
-	float getFirmwareVersion();
-	float getSoftwareVersion();
+	char* getFirmwareVersion();
+	char* getSoftwareVersion();
 
 	// Helper Commands
 	void setLaserParams(lwModeSpeed ModeSpeed);
@@ -125,7 +125,7 @@ public:
 	void setComsAddress(int Address);
 
 	bool getEnergyPower();
-	int setEnergyPower(bool Power);
+	void setEnergyPower(bool Power);
 };
 
 #endif
